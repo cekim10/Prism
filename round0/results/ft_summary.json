@@ -1,0 +1,71 @@
+{
+ "n_problems": 30,
+ "kv_bytes_per_token": 524288,
+ "policies": {
+  "const/uniform": {
+   "byte_time_GBs": 3452.875,
+   "write_GB": 19.64501953125,
+   "byte_time_saving_vs_uniform": 0.0,
+   "write_saving_vs_uniform": 0.0
+  },
+  "const/oracle_next_prune": {
+   "byte_time_GBs": 2901.625,
+   "write_GB": 17.27685546875,
+   "byte_time_saving_vs_uniform": 0.1596495673894942,
+   "write_saving_vs_uniform": 0.12054780901250217
+  },
+  "const/oracle_strict": {
+   "byte_time_GBs": 2891.8125,
+   "write_GB": 17.234375,
+   "byte_time_saving_vs_uniform": 0.16249140209245916,
+   "write_saving_vs_uniform": 0.12271021300922125
+  },
+  "const/oracle_answer": {
+   "byte_time_GBs": 752.46875,
+   "write_GB": 5.86474609375,
+   "byte_time_saving_vs_uniform": 0.7820747203417442,
+   "write_saving_vs_uniform": 0.7014639723609972
+  },
+  "ar/uniform": {
+   "byte_time_GBs": 2082.2080078125,
+   "write_GB": 19.64501953125,
+   "byte_time_saving_vs_uniform": 0.0,
+   "write_saving_vs_uniform": 0.0
+  },
+  "ar/oracle_next_prune": {
+   "byte_time_GBs": 1894.01806640625,
+   "write_GB": 17.27685546875,
+   "byte_time_saving_vs_uniform": 0.09037999119211737,
+   "write_saving_vs_uniform": 0.12054780901250217
+  },
+  "ar/oracle_strict": {
+   "byte_time_GBs": 1890.8095703125,
+   "write_GB": 17.234375,
+   "byte_time_saving_vs_uniform": 0.0919209016495316,
+   "write_saving_vs_uniform": 0.12271021300922125
+  },
+  "ar/oracle_answer": {
+   "byte_time_GBs": 477.45361328125,
+   "write_GB": 5.86474609375,
+   "byte_time_saving_vs_uniform": 0.7706984069363717,
+   "write_saving_vs_uniform": 0.7014639723609972
+  }
+ },
+ "probes": {
+  "prune2_selected_unperturbed": {
+   "hits": 21,
+   "n": 60,
+   "rate": 0.35
+  },
+  "prune2_selected_from_rank1_parent": {
+   "hits": 36,
+   "n": 60,
+   "rate": 0.6
+  },
+  "answer_from_top_scored_survivor": {
+   "hits": 15,
+   "n": 30,
+   "rate": 0.5
+  }
+ }
+}
