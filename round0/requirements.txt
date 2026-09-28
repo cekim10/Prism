@@ -1,0 +1,6 @@
+torch
+transformers>=4.38.2,<5
+datasets
+numpy
+safetensors
+accelerate
