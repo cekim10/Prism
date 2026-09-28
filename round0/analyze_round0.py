@@ -75,6 +75,21 @@ def analyze_problem(recs, npz_path=None):
             pending_prune = next(prune_iter)
         prev_rows = rows
 
+    node_parent = {r["node"]: r["parent"] for ev in events for r in ev["rows"]}
+    node_event = {r["node"]: ei for ei, ev in enumerate(events) for r in ev["rows"]}
+
+    def lca_event(u, v):
+        anc = set()
+        while u is not None:
+            anc.add(u); u = node_parent[u]
+        while v is not None and v not in anc:
+            v = node_parent[v]
+        return node_event[v] if v is not None else -1
+
+    # idle rows: block already fully decoded but still forwarded (Prism inefficiency, same-path)
+    idle_rows = sum(1 for ev in events if ev["kind"] == "denoise" for r in ev["rows"] if r["nm_blk"] == 0)
+    idle_flops = sum(ev["flops_row"] for ev in events if ev["kind"] == "denoise" for r in ev["rows"] if r["nm_blk"] == 0)
+
     # ---- per-event grouping ------------------------------------------------------------------
     total_flops = 0.0
     total_lat = 0.0
@@ -111,10 +126,21 @@ def analyze_problem(recs, npz_path=None):
                 c1_lat += (len(g) - k) * ev["lat_row"]
                 c2_lat += (k - 1) * ev["lat_row"]
                 if k > 1:
+                    reps = {}
+                    for r in g:
+                        reps.setdefault(r["cls"], r["node"])
+                    rep_nodes = list(reps.values())
+                    dists, lca_kinds = [], []
+                    for a in range(len(rep_nodes)):
+                        for b in range(a + 1, len(rep_nodes)):
+                            le = lca_event(rep_nodes[a], rep_nodes[b])
+                            dists.append(ei - le)
+                            lca_kinds.append(events[le]["kind"] if le >= 0 else "root")
                     c2_groups.append({"event_idx": ei, "kind": ev["kind"], "block": ev["block"], "step": ev["step"],
                                       "n": len(g), "k": k, "h_full_equal": len(set(r["h_full"] for r in g)) == 1,
                                       "nm_tot": g[0]["nm_tot"], "nodes": [r["node"] for r in g],
-                                      "born_perturbed": [r["born_perturbed"] for r in g]})
+                                      "born_perturbed": [r["born_perturbed"] for r in g],
+                                      "events_since_lca": dists, "lca_kind": lca_kinds})
             key = (h, ev["kind"])
             if h in seen_hfwd_first_event and seen_hfwd_first_event[h] != (ev["block"], ev["step"]):
                 cross_time_flops += len(g) * ev["flops_row"]
@@ -212,6 +238,7 @@ def analyze_problem(recs, npz_path=None):
         "c1_flops": c1_flops, "c2_flops": c2_flops, "c1_lat": c1_lat, "c2_lat": c2_lat,
         "c1_rows": c1_rows, "c2_rows": c2_rows, "c3_rows": c3_rows, "c3_flops": c3_flops,
         "cross_time_rows": cross_time_rows, "cross_time_flops": cross_time_flops,
+        "idle_rows": idle_rows, "idle_flops": idle_flops,
         "ver_dup_flops": ver_dup_flops,
         "S_C1": c1_flops / grand_total_flops, "S_C2": c2_flops / grand_total_flops,
         "S_C1_lat": c1_lat / grand_total_lat if grand_total_lat else 0.0, "S_C2_lat": c2_lat / grand_total_lat if grand_total_lat else 0.0,
@@ -251,6 +278,11 @@ def main():
         "S_C3_same_row_recompute": tot("c3_flops") / T,
         "S_cross_time_memo": tot("cross_time_flops") / T,
         "S_verifier_text_dup": tot("ver_dup_flops") / T,
+        "S_idle_finished_rows": tot("idle_flops") / T,
+        "c2_pairs_events_since_lca_hist": dict(sorted(__import__("collections").Counter(
+            d_ for d in per for g in d["c2_groups"] for d_ in g["events_since_lca"]).items())),
+        "c2_pairs_lca_kind": dict(__import__("collections").Counter(
+            k_ for d in per for g in d["c2_groups"] for k_ in g["lca_kind"])),
         "flops_share_verifier": tot("flops_verifier") / T,
         "c1_rows": tot("c1_rows"), "c2_rows": tot("c2_rows"), "c3_rows": tot("c3_rows"),
         "n_c2_groups": sum(len(d["c2_groups"]) for d in per),
