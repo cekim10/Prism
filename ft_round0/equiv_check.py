@@ -6,10 +6,14 @@ import os
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--out")
+    ap.add_argument("--files", nargs=2, help="compare two res_*.jsonl files directly (e.g. two orig runs)")
     args = ap.parse_args()
-    load = lambda m: {json.loads(l)["tag"]: json.loads(l) for l in open(os.path.join(args.out, f"res_{m}.jsonl"))}
-    o, t = load("orig"), load("traced")
+    loadf = lambda p: {json.loads(l)["tag"]: json.loads(l) for l in open(p)}
+    if args.files:
+        o, t = loadf(args.files[0]), loadf(args.files[1])
+    else:
+        o, t = loadf(os.path.join(args.out, "res_orig.jsonl")), loadf(os.path.join(args.out, "res_traced.jsonl"))
     common = sorted(set(o) & set(t))
     ok_all = True
     for tag in common:
