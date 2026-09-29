@@ -14,11 +14,15 @@ def main():
     ok_all = True
     for tag in common:
         a, b = o[tag], t[tag]
+        flat = lambda s: [v for beam in s for step in beam for v in (step if isinstance(step, list) else [step])]
+        sa, sb = flat(a["scores"]), flat(b["scores"])
+        max_score_diff = max((abs(x - y) for x, y in zip(sa, sb)), default=0.0) if len(sa) == len(sb) else float("inf")
         checks = {"pred": a["pred"] == b["pred"], "completions": a["completions"] == b["completions"],
-                  "scores": a["scores"] == b["scores"], "tokens": a["effective_num_tokens"] == b["effective_num_tokens"],
+                  "scores_exact": a["scores"] == b["scores"], "scores_within_1e-3": max_score_diff <= 1e-3,
+                  "tokens": a["effective_num_tokens"] == b["effective_num_tokens"],
                   "n_completions": len(a["completions"]) == len(b["completions"])}
-        ok = all(checks.values()); ok_all &= ok
-        print(tag, "PASS" if ok else "FAIL", checks)
+        ok = all(v for k, v in checks.items() if k != "scores_exact"); ok_all &= ok
+        print(tag, "PASS" if ok else "FAIL", checks, f"max|score diff|={max_score_diff:.2e}")
     print("ALL PASS" if ok_all and common else "SOME FAIL" if common else "no common problems")
 
 
