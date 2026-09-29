@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fasttts_prm_plugin"
+version = "0.1.0"
+description = "vLLM out-of-tree model plugin registering Skywork's Qwen2ForPrmModel (value-head PRM)"
+requires-python = ">=3.10"
+
+[project.entry-points."vllm.general_plugins"]
+skywork_prm = "fasttts_prm_plugin:register"
+
+[tool.setuptools.packages.find]
+include = ["fasttts_prm_plugin*"]
